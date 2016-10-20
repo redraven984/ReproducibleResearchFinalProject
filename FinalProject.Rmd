@@ -1,0 +1,98 @@
+---
+title: "Reproducible Research Final Project \n A study of Severe Weather Events"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Project Summary
+
+The goal of this project is to download and explore a NOAA Storm Database that contains information about severe weather evets in the US. Throughout this exploration we will use tables, figures and summaries to examine the event data and to answer two questions: 
+
+- Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+- Across the United States, which types of events have the greatest economic consequences?
+
+## Data Processing:
+## Downloading and Loading the data
+To begin we will download the data from NOAA and load it into R. We will then read the data from the file into an R table.
+
+```{r}
+# Download the data
+download.file('https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2','stormData.csv.bz2')
+
+# Now unpack the data
+stormData <- read.csv('stormData.csv.bz2')
+```
+
+## Analyzing the import data set
+We begin our analysis by summarizing the contents of the data set. What we find is that there are 902,297 events in the database. Each event has a recorded beginning and eng time, location - state, county, longitude and latitude, type, range, and damage count - fatalities, injuries, and property damanges.
+```{r}
+summary(stormData)
+```
+
+Now that we have summarized the data, we want to find out what kind of events are the most harmful to people. There are two categories in the data that reflect harm to the population - fatalities and injuries. In this case we will consider them together and collect all harmful events by storm type. We will perform this using the aggregate command. To prepare the data set for this analysis we add a new column called HumanHarm.
+```{r pressure, echo=FALSE}
+
+# add the human harm column
+stormData['HumanHarm']<-stormData$FATALITIES+stormData$INJURIES
+
+# Now collect the data based on the new column
+harmfulData <- aggregate(stormData$HumanHarm, list(stormData$EVTYPE), sum)
+
+```
+
+Now lets examine the collected data set.
+```{r}
+summary(harmfulData)
+```
+
+## Results:
+## Which events cause the most harm to people?
+We note here that there are 96,979 reports of injuries or deaths from the population. These have occured amoung 985 types of weather conditions. Now we want to order the data set to show us which weather events are the most harmful.
+
+```{r}
+# Sort the data
+sortedHarmfulData<-harmfulData[order(-harmfulData$x),]
+
+# Display the results - top 20 types of events that cause fatalities or injuries
+head(sortedHarmfulData,20)
+
+# now plot the top 20 most harmful events
+par(mar=c(12.5,4,4,2)) # First set the margins so that the labels are not cut off
+
+# plot the data
+plot(sortedHarmfulData$x[1:20],type='l',main="Injury and Fatality Decrease \n From Top Harmful Events",xlab="",ylab = 'Number of Harmed Individuals',xaxt = "n")
+
+# Lastly label the events on the X axis
+axis(1,1:20,labels =sortedHarmfulData$Group.1[1:20],las=2)
+```
+
+## Results:
+## Which events cause the most economic damage?
+We now move onto the next question, which events cause the most economic damage. Looking at the original data summary we can argue that economic damage falls into two categories: property damage and crop damage. We repeat the analysis above but this time for economic damage.
+
+```{r}
+# add the human harm column
+stormData['EconDamage']<-stormData$PROPDMG+stormData$CROPDMG
+
+# Now collect the data based on the new column
+econDamageData <- aggregate(stormData$EconDamage, list(stormData$EVTYPE), sum)
+
+# Now sort the data by the damage numbers
+sortedEconData<-econDamageData[order(-econDamageData$x),]
+
+# Display the results - top 20 types of events that cause fatalities or injuries
+head(sortedEconData,20)
+
+
+# now plot the top 20 most destructive events
+par(mar=c(12.5,4,4,2)) # First set the margins so that the labels are not cut off
+
+# plot the data
+plot(sortedEconData$x[1:20],type='l',main="Property Damage Decrease \n From Top Destructive Events",xlab="",ylab = 'Dollars of Damage [$]',xaxt = "n")
+
+# Lastly label the events on the X axis
+axis(1,1:20,labels =sortedEconData$Group.1[1:20],las=2)
+```
